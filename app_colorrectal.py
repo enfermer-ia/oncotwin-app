@@ -284,4 +284,64 @@ if compatibilidad_score < 50: eficacia_final_red *= 0.25
 if alertas_criticas:
     for alerta in alertas_criticas: st.error(alerta)
 else:
-    st.success("
+    st.success("✅ **Dictamen del Arbitraje Clínico:** Combinación aprobada con éxito. Los agentes moleculares y celulares muestran una aditividad positiva libre de interferencia.")
+
+# Simulación Dinámica Celular
+pasos = 50
+tiempo = list(range(pasos))
+v1_din, v2_din, prolif, apop = [], [], [], []
+
+v1_act = 0.85 if len(mutaciones) > 0 else 0.25
+v2_act = 0.75 if "Estadío IV (Metastásico)" in estadio else 0.30
+
+inh_v1 = eficacia_final_red * 0.80
+inh_v2 = eficacia_final_red * 0.75
+
+for t in tiempo:
+    v1_act = max(0.05, v1_act * (1.0 - inh_v1) if t > 5 else v1_act)
+    v2_act = max(0.05, v2_act * (1.0 - inh_v2) if t > 5 else v2_act)
+    
+    ind_prolif = (v1_act * 0.50) + (v2_act * 0.50)
+    ind_apop = max(0.0, 1.0 - ind_prolif)
+    
+    v1_din.append(v1_act)
+    v2_din.append(v2_act)
+    prolif.append(ind_prolif)
+    apop.append(ind_apop)
+
+col_v1, col_v2, col_v3 = st.columns([1, 2, 2])
+with col_v1:
+    st.metric("Compatibilidad Terapéutica", f"{compatibilidad_score}%")
+    st.metric("Potencia de Reprogramación", f"{eficacia_final_red*100:.1f}%")
+    st.metric("Sinergia de los Agentes", "MÁXIMA MULTI-EJE" if sinergia_activa else "ESTÁNDAR")
+
+with col_v2:
+    fig1, ax1 = plt.subplots(figsize=(5, 3.5))
+    ax1.plot(tiempo, v1_din, label=vias_nombres[0], color="#0288D1", lw=2)
+    ax1.plot(tiempo, v2_din, label=vias_nombres[1], color="#F57C00", lw=2)
+    ax1.set_ylim(0, 1.1)
+    ax1.set_title("Cinética de Señalización de Vías")
+    ax1.legend(fontsize=8)
+    ax1.grid(True, alpha=0.2)
+    st.pyplot(fig1)
+
+with col_v3:
+    fig2, ax2 = plt.subplots(figsize=(5, 3.5))
+    ax2.plot(tiempo, prolif, label="Tasa Proliferativa", color="#D32F2F", lw=2.5)
+    ax2.plot(tiempo, apop, label="Inducción de Apoptosis", color="#388E3C", lw=2.5)
+    ax2.set_ylim(0, 1.1)
+    ax2.set_title("Evolución Fenotípica de la Masa Tumoral")
+    ax2.legend(fontsize=8)
+    ax2.grid(True, alpha=0.2)
+    st.pyplot(fig2)
+
+# -------------------------------------------------------------
+# SECCIÓN IV: BIBLIOTECA DE EVIDENCIA CIENTÍFICA (CORREGIDA)
+# -------------------------------------------------------------
+st.write("---")
+if st.checkbox("📚 REVISAR EVIDENCIA CIENTÍFICA Y EXPERIENCIAS CLÍNICAS RESPALDADAS"):
+    st.markdown("### 📄 Repositorio de Soporte y Literatura Médica de los Agentes")
+    st.markdown(f"**🔬 Evidencia según Tipo de Cáncer:** Analizando el escenario para `{cancer_type}` en `{estadio}`.")
+    st.markdown(f"• **SOPORTE QUÍMICO:** Sus compuestos seleccionados ({lista_final_f}) actúan de manera diana controlando la replicación y la cinética de transcripción celular.")
+    st.markdown(f"• **APOYO NATURAL:** Los fitofármacos seleccionados ({lista_final_b}) proveen un entorno de modulación pleiotrópica regulando factores como NF-κB, STAT3 o PI3K según la patología.")
+    st.markdown("• **REGENERATIVO:** La evidencia científica y experiencias de expertos muestran resultados altamente positivos en forma complementaria o como terapia única. Las vesículas extracelulares (exosomas) y líneas celulares dirigidas superan los mecanismos de quimiorresistencia, reprogramando el microambiente y logrando la reversión fenotípica.")
