@@ -11,7 +11,6 @@ st.write("Gemelo Digital de Precisión adaptado a la epidemiología oncológica 
 # -------------------------------------------------------------
 # BASE DE DATOS DILIGENCIADA POR CÁNCER (MÁXIMA FRECUENCIA EN CHILE)
 # -------------------------------------------------------------
-# Diccionario maestro que contiene mutaciones, compuestos (Top 7) y vías específicas por patología
 db_chile_oncologia = {
     "Cáncer Colorrectal": {
         "mutaciones": ["APC Mutado", "KRAS Mutado", "BRAF Mutado", "TP53 Mutado"],
@@ -107,7 +106,6 @@ with st.expander("👤 PANEL I: Perfilado Omnipresente del Paciente (Historial C
     col_p1, col_p2, col_p3, col_p4 = st.columns(4)
     
     with col_p1:
-        # Selector de patologías de alta prevalencia en Chile
         cancer_type = st.selectbox("Tipo de Cáncer (Frecuentes en Chile)", list(db_chile_oncologia.keys()))
         estadio = st.selectbox("Estadío Clínico", ["Estadío I", "Estadío II", "Estadío III", "Estadío IV (Metastásico)"])
         tiempo_det = st.number_input("Tiempo desde Detección (meses)", min_value=1, max_value=120, value=6)
@@ -126,26 +124,23 @@ with st.expander("👤 PANEL I: Perfilado Omnipresente del Paciente (Historial C
         comorbilidades = st.multiselect("Comorbilidades", ["Hipertensión Arterial", "Cardiopatía", "Diabetes Tipo 2", "Ninguna"], default=["Ninguna"])
         alergias = st.text_input("Alergias Conocidas", "Ninguna")
         
-        # Carga dinámica de mutaciones basada en el cáncer seleccionado
         mutaciones_disponibles = db_chile_oncologia[cancer_type]["mutaciones"]
         mutaciones = st.multiselect("Mutaciones Conductoras (Ómica Personalizada)", mutaciones_disponibles, default=[mutaciones_disponibles[0]])
 
-# Extracción de variables contextuales dinámicas
+# Extracción dinámica de datos según la selección del usuario
 vias_nombres = db_chile_oncologia[cancer_type]["vias"]
 farmacos_dict = db_chile_oncologia[cancer_type]["farmacos"]
 fitofarmacos_dict = db_chile_oncologia[cancer_type]["fitofarmacos"]
 regenerativas_dict = db_chile_oncologia[cancer_type]["regenerativas"]
 
 # -------------------------------------------------------------
-# MOTOR DE RECOMENDACIÓN DE IA CONSENSUADA (PROPUESTA CHILE)
+# MOTOR DE RECOMENDACIÓN DE IA CONSENSUADA
 # -------------------------------------------------------------
-# Inicialización de propuestas basadas en el primer elemento por defecto
 sug_f = list(farmacos_dict.keys())[0]
 sug_b = list(fitofarmacos_dict.keys())[0]
 sug_r = list(regenerativas_dict.keys())[0]
 justificaciones = []
 
-# Lógica predictiva experta multi-patología chilena
 if cancer_type == "Cáncer Colorrectal":
     if "KRAS Mutado" in mutaciones:
         sug_f = "Irinotecán"
@@ -197,12 +192,10 @@ elif cancer_type == "Cáncer de Pulmón":
     sug_b = "Astrágalo (Extracto)"
     justificaciones.append("• **APOYO NATURAL:** El Astrágalo contrarresta la inmunosupresión mediada por el microambiente del carcinoma pulmonar.")
 
-# Criterio transversal regenerativo si existe metástasis
 if "Estadío IV (Metastásico)" in estadio:
     sug_r = "Células Madre Mesenquimales (MSCs-TRAIL)"
     justificaciones.append("• **ALERTA REGENERATIVA CRÍTICA:** En escenarios metastásicos avanzados, el agente REGENERATIVO prescribe exclusivamente células modificadas con ligando TRAIL para forzar la apoptosis de células tumorales diseminadas, previniendo que el estroma tumoral reclute células madre crudas.")
 
-# Renderizado estético de la propuesta de combinación perfecta
 st.write(" ")
 with st.container(border=True):
     st.markdown(f"### 🎯 PROPUESTA DE MÁXIMA EFECTIVIDAD: {cancer_type}")
@@ -218,7 +211,7 @@ with st.container(border=True):
             st.markdown(j)
 
 # -------------------------------------------------------------
-# SECCIÓN II: GRILLAS DE EVALUACIÓN DINÁMICA CON LOS NUEVOS NOMBRES
+# SECCIÓN II: GRILLAS DE EVALUACIÓN DINÁMICA
 # -------------------------------------------------------------
 st.write("---")
 st.subheader("🤖 PANEL II: Grillas de Descubrimiento e Ingesta de los Agentes")
@@ -243,7 +236,6 @@ with col_ag3:
     seleccion_r = st.multiselect("Vesículas / Células Madre / Exosomas:", opciones_r, default=[sug_r])
     custom_r = st.text_input("Terapia 8 (Manual):", "Exosomas Autólogos Modificados") if "Ingresar Terapia Manualmente (Lugar 8)" in seleccion_r else ""
 
-# Conservación del selector para nanométrico
 es_nanometrico = st.toggle("🔬 **Optimización de Entrega: Escala Nanométrica (Maximiza estabilidad biológica celular y biodisponibilidad)**", value=True)
 factor_nano = 1.65 if es_nanometrico else 1.00
 
@@ -253,7 +245,6 @@ factor_nano = 1.65 if es_nanometrico else 1.00
 st.write("---")
 st.subheader("👨‍⚕️ PANEL III: Arbitraje Clínico y Simulación del Gemelo Digital")
 
-# Mapeo final de elementos de las grillas
 lista_final_f = [custom_f if x == "Ingresar Compuesto Manualmente (Lugar 8)" else x for x in seleccion_f]
 lista_final_b = [custom_b if x == "Ingresar Extracto Manualmente (Lugar 8)" else x for x in seleccion_b]
 lista_final_r = [custom_r if x == "Ingresar Terapia Manualmente (Lugar 8)" else x for x in seleccion_r]
@@ -262,7 +253,6 @@ alertas_criticas = []
 compatibilidad_score = 100
 eficacia_acumulada = 0.0
 
-# Reglas Clínicas Adaptativas de Arbitraje Oncólogo
 if cancer_type == "Cáncer Colorrectal" and "KRAS Mutado" in mutaciones and any(x in ["Cetuximab", "Panitumumab"] for x in lista_final_f):
     alertas_criticas.append("❌ **Incompatibilidad Ómica:** Los anticuerpos anti-EGFR (Cetuximab/Panitumumab) carecen de efectividad clínica en tumores con mutación activa en KRAS corriente abajo.")
     compatibilidad_score -= 40
@@ -275,7 +265,6 @@ if "Estadío IV (Metastásico)" in estadio and "Células Madre Mesenquimales (MS
     alertas_criticas.append("⚠️ **Riesgo Estromal Metastásico:** En etapas avanzadas, el estroma recluta células madre crudas promoviendo nichos pre-metastásicos. Se aconseja mutar a la línea celular modificada MSCs-TRAIL.")
     compatibilidad_score -= 15
 
-# Cálculo de Eficacia Integrada Basal
 for c in lista_final_f:
     if c in farmacos_dict: eficacia_acumulada += farmacos_dict[c] * 0.4
 for b in lista_final_b:
@@ -283,7 +272,6 @@ for b in lista_final_b:
 for r in lista_final_r:
     if r in regenerativas_dict: eficacia_acumulada += regenerativas_dict[r] * 0.35
 
-# Sinergias Avanzadas Multi-Agente
 sinergia_activa = False
 if "Exosomas Cargados con miRNA-145" in lista_final_r and "KRAS Mutado" in mutaciones:
     sinergia_activa = True; eficacia_acumulada += 0.15
@@ -296,64 +284,4 @@ if compatibilidad_score < 50: eficacia_final_red *= 0.25
 if alertas_criticas:
     for alerta in alertas_criticas: st.error(alerta)
 else:
-    st.success("✅ **Dictamen del Arbitraje Clínico:** Combinación aprobada con éxito. Los agentes moleculares y celulares muestran una aditividad positiva libre de interferencia deletérea.")
-
-# Backend Matemático de Simulación Dinámica Celular (Vías dinámicas)
-pasos = 50
-tiempo = list(range(pasos))
-v1_din, v2_din, prolif, apop = [], [], [], []
-
-v1_act = 0.85 if len(mutaciones) > 0 else 0.25
-v2_act = 0.75 if "Estadío IV (Metastásico)" in estadio else 0.30
-
-# Atenuación basada en la potencia calculada
-inh_v1 = eficacia_final_red * 0.80
-inh_v2 = eficacia_final_red * 0.75
-
-for t in tiempo:
-    v1_act = max(0.05, v1_act * (1.0 - inh_v1) if t > 5 else v1_act)
-    v2_act = max(0.05, v2_act * (1.0 - inh_v2) if t > 5 else v2_act)
-    
-    ind_prolif = (v1_act * 0.50) + (v2_act * 0.50)
-    ind_apop = max(0.0, 1.0 - ind_prolif)
-    
-    v1_din.append(v1_act)
-    v2_din.append(v2_act)
-    prolif.append(ind_prolif)
-    apop.append(ind_apop)
-
-# DESPLIEGUE GRÁFICO DEL GEMELO DIGITAL
-col_v1, col_v2, col_v3 = st.columns([1, 2, 2])
-with col_v1:
-    st.metric("Compatibilidad Terapéutica", f"{compatibilidad_score}%")
-    st.metric("Potencia de Reprogramación", f"{eficacia_final_red*100:.1f}%")
-    st.metric("Sinergia de los Agentes", "MÁXIMA MULTI-EJE" if sinergia_activa else "ESTÁNDAR")
-
-with col_v2:
-    fig1, ax1 = plt.subplots(figsize=(5, 3.5))
-    ax1.plot(tiempo, v1_din, label=vias_nombres[0], color="#0288D1", lw=2)
-    ax1.plot(tiempo, v2_din, label=vias_nombres[1], color="#F57C00", lw=2)
-    ax1.set_ylim(0, 1.1)
-    ax1.set_title("Cinética de Señalización de Vías")
-    ax1.legend(fontsize=8)
-    ax1.grid(True, alpha=0.2)
-    st.pyplot(fig1)
-
-with col_v3:
-    fig2, ax2 = plt.subplots(figsize=(5, 3.5))
-    ax2.plot(tiempo, prolif, label="Tasa Proliferativa", color="#D32F2F", lw=2.5)
-    ax2.plot(tiempo, apop, label="Inducción de Apoptosis", color="#388E3C", lw=2.5)
-    ax2.set_ylim(0, 1.1)
-    ax2.set_title("Evolución Fenotípica de la Masa Tumoral")
-    ax2.legend(fontsize=8)
-    ax2.grid(True, alpha=0.2)
-    st.pyplot(fig2)
-
-# -------------------------------------------------------------
-# SECCIÓN IV: BIBLIOTECA DE EVIDENCIA CIENTÍFICA
-# -------------------------------------------------------------
-st.write("---")
-if st.checkbox("📚 REVISAR EVIDENCIA CIENTÍFICA Y EXPERIENCIAS CLÍNICAS RESPALDADAS"):
-    st.markdown("### 📄 Repositorio de Soporte y Literatura Médica de los Agentes")
-    
-    st.markd
+    st.success("
