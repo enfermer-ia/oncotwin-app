@@ -5,7 +5,7 @@ import matplotlib.pyplot as plt
 
 # 1. CONFIGURACIÓN DE PANTALLA ADAPTATIVA Y PROFESIONAL
 st.set_page_config(page_title="OncoTwin Pro v5 - Chile", layout="wide")
-st.title("🧬 OncoTwin Pro: Plataforma de Simulación (Edición REGENERA)")
+st.title("🧬 OncoTwin Pro: Plataforma de Simulación (Para REGENERA)")
 st.write("Gemelo Digital de Precisión adaptado a Oncología.")
 
 # -------------------------------------------------------------
