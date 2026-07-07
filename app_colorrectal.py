@@ -5,8 +5,8 @@ import matplotlib.pyplot as plt
 
 # 1. CONFIGURACIÓN DE PANTALLA ADAPTATIVA Y PROFESIONAL
 st.set_page_config(page_title="OncoTwin Pro v5 - Chile", layout="wide")
-st.title("🧬 OncoTwin By MEDISYS Chile")
-st.write("Gemelo Digital de Precisión para REGENERA.")
+st.title("🧬 OncoTwin Pro: Plataforma de Simulación Multi-Agente (Edición Chile)")
+st.write("Gemelo Digital de Precisión adaptado a la epidemiología oncológica chilena.")
 
 # -------------------------------------------------------------
 # BASE DE DATOS DILIGENCIADA POR CÁNCER (MÁXIMA FRECUENCIA EN CHILE)
@@ -219,19 +219,19 @@ st.subheader("🤖 PANEL II: Grillas de Descubrimiento e Ingesta de los Agentes"
 col_ag1, col_ag2, col_ag3 = st.columns(3)
 
 with col_ag1:
-    st.markdown("⚡ **SOPORTE QUÍMICO**")
+    st.markdown("⚡ **Agente de IA: SOPORTE QUÍMICO**")
     opciones_f = list(farmacos_dict.keys()) + ["Ingresar Compuesto Manualmente (Lugar 8)"]
     seleccion_f = st.multiselect("Fármacos Sintéticos / Dirigidos:", opciones_f, default=[sug_f])
     custom_f = st.text_input("Fármaco 8 (Manual):", "Inhibidor Experimental") if "Ingresar Compuesto Manualmente (Lugar 8)" in seleccion_f else ""
 
 with col_ag2:
-    st.markdown("🌿 **APOYO NATURAL**")
+    st.markdown("🌿 **Agente de IA: APOYO NATURAL**")
     opciones_b = list(fitofarmacos_dict.keys()) + ["Ingresar Extracto Manualmente (Lugar 8)"]
     seleccion_b = st.multiselect("Extractos Botánicos / Fitofármacos:", opciones_b, default=[sug_b])
     custom_b = st.text_input("Extracto 8 (Manual):", "Compuesto Botánico Libre") if "Ingresar Extracto Manualmente (Lugar 8)" in seleccion_b else ""
 
 with col_ag3:
-    st.markdown("🧠 **TERAPIA REGENERATIVA**")
+    st.markdown("🧠 **Agente de IA: REGENERATIVO**")
     opciones_r = list(regenerativas_dict.keys()) + ["Ingresar Terapia Manualmente (Lugar 8)"]
     seleccion_r = st.multiselect("Vesículas / Células Madre / Exosomas:", opciones_r, default=[sug_r])
     custom_r = st.text_input("Terapia 8 (Manual):", "Exosomas Autólogos Modificados") if "Ingresar Terapia Manualmente (Lugar 8)" in seleccion_r else ""
