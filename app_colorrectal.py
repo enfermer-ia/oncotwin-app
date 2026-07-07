@@ -5,8 +5,8 @@ import matplotlib.pyplot as plt
 
 # 1. CONFIGURACIÓN DE PANTALLA ADAPTATIVA Y PROFESIONAL
 st.set_page_config(page_title="OncoTwin Pro v5 - Chile", layout="wide")
-st.title("🧬 OncoTwin Pro: Plataforma de Simulación Multi-Agente (Edición Chile)")
-st.write("Gemelo Digital de Precisión adaptado a la epidemiología oncológica chilena.")
+st.title("🧬 OncoTwin Pro: By MEDISYS (Edición Chile)")
+st.write("Gemelo Digital de Precisión para REGENERA.")
 
 # -------------------------------------------------------------
 # BASE DE DATOS DILIGENCIADA POR CÁNCER (MÁXIMA FRECUENCIA EN CHILE)
