@@ -2,6 +2,7 @@ import streamlit as st
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
+
 # 1. CONFIGURACIÓN DE PANTALLA ADAPTATIVA Y PROFESIONAL
 st.set_page_config(page_title="OncoTwin Pro v5 - Chile", layout="wide")
 st.title("🧬 OncoTwin Pro: Plataforma de Simulación Multi-Agente (Edición Chile)")
