@@ -4,7 +4,7 @@ import numpy as np
 
 # Configuración inicial de la plataforma OncoTwin
 st.set_page_config(
-    page_title="OncoTwin:Gemelo Digital Oncológico",
+    page_title="OncoTwin: Gemelo Digital Oncológico",
     layout="wide",
     page_icon="🧬"
 )
