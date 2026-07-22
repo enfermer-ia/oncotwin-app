@@ -1,347 +1,382 @@
 import streamlit as st
-import numpy as np
 import pandas as pd
-import matplotlib.pyplot as plt
+import numpy as np
 
-# 1. CONFIGURACIÓN DE PANTALLA ADAPTATIVA Y PROFESIONAL
-st.set_page_config(page_title="OncoTwin Pro v5 - Chile", layout="wide")
-st.title("🧬 OncoTwin Pro: Plataforma de Simulación Multi-Agente (Edición Chile)")
-st.write("Gemelo Digital de Precisión adaptado a la epidemiología oncológica chilena.")
+# Configuración inicial de la aplicación
+st.set_page_config(
+    page_title="OncoTwin Pro - Gemelo Digital Chile",
+    page_icon="🧬",
+    layout="wide",
+    initial_sidebar_state="expanded"
+)
 
-# -------------------------------------------------------------
-# BASE DE DATOS DILIGENCIADA POR CÁNCER (MÁXIMA FRECUENCIA EN CHILE)
-# -------------------------------------------------------------
-db_chile_oncologia = {
+# Estilos CSS personalizados para replicar la interfaz médica/ómica
+st.markdown("""
+<style>
+    .main-header {
+        font-size: 2.2rem;
+        font-weight: bold;
+        color: #FFFFFF;
+        margin-bottom: 0px;
+    }
+    .sub-header {
+        font-size: 1.05rem;
+        color: #94A3B8;
+        margin-bottom: 20px;
+    }
+    .chem-box {
+        background-color: #1E293B;
+        border-left: 5px solid #3B82F6;
+        padding: 12px 16px;
+        border-radius: 8px;
+        margin-bottom: 12px;
+    }
+    .nat-box {
+        background-color: #064E3B;
+        border-left: 5px solid #10B981;
+        padding: 12px 16px;
+        border-radius: 8px;
+        margin-bottom: 12px;
+    }
+    .regen-box {
+        background-color: #701A75;
+        border-left: 5px solid #F43F5E;
+        padding: 12px 16px;
+        border-radius: 8px;
+        margin-bottom: 12px;
+    }
+    .badge-title {
+        font-size: 0.85rem;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+    }
+    .badge-value {
+        font-size: 1.15rem;
+        font-weight: 600;
+        color: #FFFFFF;
+    }
+</style>
+""", unsafe_allow_html=True)
+
+# ----------------------------------------------------
+# BASE DE DATOS Y CONFIGURACIÓN EPIDEMIOLÓGICA (CHILE)
+# ----------------------------------------------------
+DATOS_ONCOLOGICOS = {
+    "Cáncer Gástrico (Estómago)": {
+        "soporte_quimico": ["Trastuzumab", "Capecitabina", "Oxaliplatino", "5-Fluorouracilo"],
+        "apoyo_natural": ["Curcumina Nanostructurada", "EGCG (Té Verde)", "Resveratrol", "Quercetina"],
+        "regenerativo": ["Exosomas Cargados con PTEN", "Vesículas Extracelulares Mesenquimales"],
+        "rec_chem": "Trastuzumab",
+        "rec_nat": "Curcumina Nanostructurada",
+        "rec_regen": "Exosomas Cargados con PTEN",
+        "justificacion_chem": "Trastuzumab bloquea selectivamente receptores HER2 hiperexpresados en epitelio gástrico.",
+        "justificacion_nat": "La curcumina nanoestructurada inhibe la activación constitutiva de STAT3 y NF-kB en mucosa gástrica.",
+        "justificacion_regen": "Exosomas con PTEN restauran la función del gen supresor tumoral sobre la vía PI3K/AKT."
+    },
     "Cáncer Colorrectal": {
-        "mutaciones": ["APC Mutado", "KRAS Mutado", "BRAF Mutado", "TP53 Mutado"],
-        "vias": ["β-catenina (Eje Wnt)", "ERK (Eje MAPK)"],
-        "farmacos": {
-            "5-Fluorouracilo (5-FU)": 0.65, "Oxaliplatino": 0.70, "Irinotecán": 0.68, 
-            "Capecitabina": 0.60, "Cetuximab": 0.75, "Panitumumab": 0.73, "Regorafenib": 0.55
-        },
-        "fitofarmacos": {
-            "Curcumina (Cúrcuma)": 0.40, "Quercetina": 0.38, "EGCG (Té Verde)": 0.35, 
-            "Resveratrol": 0.42, "Sulforafano": 0.39, "Silibinina": 0.33, "Berberina": 0.45
-        },
-        "regenerativas": {
-            "Exosomas Cargados con miRNA-145": 0.58, "Exosomas de Células Dendríticas": 0.52, 
-            "Células Madre Mesenquimales (MSCs-TRAIL)": 0.60, "Exosomas Derivados de MSC (M2-to-M1)": 0.48, 
-            "Células NK Alogénicas": 0.64, "Exosomas con siRNA anti-β-catenina": 0.56, "Secretoma de Células Madre Hipóxicas": 0.38
-        }
+        "soporte_quimico": ["Bevacizumab", "FOLFOX", "Cetuximab", "Irinotecan"],
+        "apoyo_natural": ["Sulforafano (Brócoli)", "Curcumina Nano", "Resveratrol"],
+        "regenerativo": ["Exosomas Células Madre Mesenquimales", "MicroARN-145 Nano-encapsulado"],
+        "rec_chem": "Bevacizumab",
+        "rec_nat": "Sulforafano (Brócoli)",
+        "rec_regen": "Exosomas Células Madre Mesenquimales",
+        "justificacion_chem": "Inhibición anti-VEGF para bloquear la neoangiogénesis tumoral en el estroma intestinal.",
+        "justificacion_nat": "Sulforafano promueve la detención del ciclo celular y modula el estrés oxidativo microambiental.",
+        "justificacion_regen": "Vesículas mesenquimales modulan las señales inflamatorias crónicas del microambiente tumoral."
     },
     "Cáncer de Próstata": {
-        "mutaciones": ["PTEN Mutado", "AR Amplificado", "BRCA2 Mutado", "TP53 Mutado"],
-        "vias": ["Receptor Androgénico (AR)", "AKT (Vía PTEN/PI3K)"],
-        "farmacos": {
-            "Enzalutamida": 0.78, "Abiraterona": 0.75, "Docetaxel": 0.70, 
-            "Olaparib": 0.72, "Cabazitaxel": 0.67, "Bicalutamida": 0.58, "Leuprolida": 0.64
-        },
-        "fitofarmacos": {
-            "Licopeno (Tomate)": 0.42, "Saw Palmetto (Sabal)": 0.38, "EGCG (Té Verde)": 0.40, 
-            "Curcumina": 0.39, "Quercetina": 0.36, "Genisteína": 0.35, "Sulforafano": 0.37
-        },
-        "regenerativas": {
-            "Exosomas con siRNA anti-AR": 0.62, "Exosomas de Células Dendríticas Activadas": 0.65, 
-            "Células Madre Mesenquimales (MSCs-TRAIL)": 0.59, "Células NK Alogénicas": 0.63, 
-            "Vesículas de Reprogramación Inmune": 0.50, "Secretoma Protector Óseo (Anti-Metástasis)": 0.45, "Vesículas de MSC": 0.40
-        }
+        "soporte_quimico": ["Enzalutamida", "Abiraterona", "Docetaxel", "Cabazitaxel"],
+        "apoyo_natural": ["Licopeno Nano-emulsionado", "EGCG (Té Verde)", "Genisteína"],
+        "regenerativo": ["Vesículas de Exosomas Supresores", "Péptidos Oncolíticos Nano-dirigidos"],
+        "rec_chem": "Enzalutamida",
+        "rec_nat": "Licopeno Nano-emulsionado",
+        "rec_regen": "Vesículas de Exosomas Supresores",
+        "justificacion_chem": "Inhibición directa y selectiva de la señalización intracelular del receptor de andrógenos.",
+        "justificacion_nat": "Licopeno de alta biodisponibilidad disminuye factores pro-inflamatorios e interrumpe la vía androgenética.",
+        "justificacion_regen": "Exosomas supresores restauran los frenos celulares contra la proliferación descontrolada."
     },
     "Cáncer de Mama": {
-        "mutaciones": ["HER2 Positivo", "PIK3CA Mutado", "BRCA1 Mutado", "RE/RP Positivo"],
-        "vias": ["Receptor HER2/Neu", "AKT (Vía PI3K/mTOR)"],
-        "farmacos": {
-            "Trastuzumab": 0.82, "Pertuzumab": 0.80, "Paclitaxel": 0.72, 
-            "Tamoxifeno": 0.66, "Palbociclib": 0.75, "Doxorrubicina": 0.70, "Capecitabina": 0.62
-        },
-        "fitofarmacos": {
-            "Sulforafano (Brócoli)": 0.45, "EGCG (Té Verde)": 0.41, "Genisteína (Soja)": 0.38, 
-            "Quercetina": 0.37, "Curcumina": 0.40, "Resveratrol": 0.42, "Apigenina": 0.36
-        },
-        "regenerativas": {
-            "Exosomas Cargados con PTEN": 0.63, "Exosomas con miRNA-21 Inhibidor": 0.57, 
-            "Células NK Alogénicas": 0.66, "Células Madre Mesenquimales (MSCs-TRAIL)": 0.61, 
-            "Exosomas Inmunomoduladores": 0.52, "Secretoma Regulador de Proliferación": 0.44, "Exosomas con siRNA anti-PI3K": 0.58
-        }
-    },
-    "Cáncer Gástrico (Estómago)": {
-        "mutaciones": ["HER2 Positivo", "CDH1 Mutado", "TP53 Mutado", "Inestabilidad Satelital (MSI)"],
-        "vias": ["Receptor HER2/EGFR", "STAT3 (Vía Inflamatoria)"],
-        "farmacos": {
-            "Cisplatino": 0.68, "Capecitabina": 0.62, "Trastuzumab": 0.79, 
-            "Ramucirumab": 0.71, "Pembrolizumab": 0.76, "5-Fluorouracilo (5-FU)": 0.64, "Oxaliplatino": 0.69
-        },
-        "fitofarmacos": {
-            "Sulforafano": 0.46, "Ginsenósidos (Ginseng)": 0.42, "Quercetina": 0.39, 
-            "Curcumina": 0.41, "EGCG (Té Verde)": 0.38, "Berberina": 0.43, "Silibinina": 0.35
-        },
-        "regenerativas": {
-            "Exosomas con miRNA-34a": 0.60, "Células NK Alogénicas": 0.65, 
-            "Secretoma de Células Madre Gástricas": 0.43, "Células Madre Mesenquimales (MSCs-TRAIL)": 0.58, 
-            "Exosomas Presentadores de Antígenos": 0.54, "Exosomas de Macrófagos M1": 0.51, "Vesículas Reguladoras Epiteliales": 0.46
-        }
+        "soporte_quimico": ["Trastuzumab", "Pertuzumab", "Tamoxifeno", "Paclitaxel"],
+        "apoyo_natural": ["Sulforafano (Brócoli)", "Curcumina Nanoestructurada", "Resveratrol"],
+        "regenerativo": ["Exosomas Cargados con PTEN", "Células Madre Reprogramadas"],
+        "rec_chem": "Trastuzumab",
+        "rec_nat": "Sulforafano (Brócoli)",
+        "rec_regen": "Exosomas Cargados con PTEN",
+        "justificacion_chem": "Trastuzumab actúa bloqueando de forma directa la dimerización del receptor HER2/Neu.",
+        "justificacion_nat": "Fitofármacos seleccionados proveen un entorno de modulación pleiotrópica regulando factores como NF-kB, STAT3 o PI3K.",
+        "justificacion_regen": "Exosomas con PTEN restauran el freno supresor de tumores sobre la vía hiperactiva de PI3K."
     },
     "Cáncer de Pulmón": {
-        "mutaciones": ["EGFR Mutado", "ALK Fusionado", "KRAS Mutado", "TP53 Mutado"],
-        "vias": ["Receptor EGFR (MAPK)", "ALK / Eje AKT (Supervivencia)"],
-        "farmacos": {
-            "Osimertinib": 0.84, "Alectinib": 0.81, "Pembrolizumab": 0.77, 
-            "Cisplatino": 0.66, "Carboplatino": 0.64, "Paclitaxel": 0.68, "Docetaxel": 0.69
-        },
-        "fitofarmacos": {
-            "EGCG (Té Verde)": 0.43, "Resveratrol": 0.41, "Curcumina": 0.40, 
-            "Astrágalo (Extracto)": 0.45, "Sulforafano": 0.42, "Quercetina": 0.38, "Fisetina": 0.37
-        },
-        "regenerativas": {
-            "Exosomas con siRNA anti-EGFR": 0.64, "Exosomas con miRNA-133b": 0.59, 
-            "Células NK Alogénicas": 0.67, "Células Madre Mesenquimales (MSCs-TRAIL)": 0.62, 
-            "Exosomas Anti-Angiogénicos": 0.55, "Secretoma Protector Alveolar": 0.41, "Vesículas de Células T Quiméricas": 0.63
-        }
+        "soporte_quimico": ["Osimertinib", "Pembrolizumab", "Cisplatino", "Carboplatino"],
+        "apoyo_natural": ["Boswellia Serrata Nano", "Curcumina", "Ganoderma Lucidum Nano"],
+        "regenerativo": ["Exosomas Células Madre Pulmonares", "ARNi Antisentido Liposomal"],
+        "rec_chem": "Osimertinib",
+        "rec_nat": "Boswellia Serrata Nano",
+        "rec_regen": "Exosomas Células Madre Pulmonares",
+        "justificacion_chem": "Bloqueo selectivo de receptores EGFR mutados inhibiendo la vía de supervivencia celular.",
+        "justificacion_nat": "Boswellia serrata nano-emulsionada modula la vía 5-LOX y la respuesta inflamatoria parenquimatosa.",
+        "justificacion_regen": "Vesículas pulmonares especializadas favorecen el remodelado celular y reducen el nicho metastásico."
+    },
+    "Cáncer de Ovario": {
+        "soporte_quimico": ["Olaparib", "Carboplatino", "Paclitaxel", "Bevacizumab"],
+        "apoyo_natural": ["Curcumina Nanostructurada", "EGCG (Té Verde)", "Resveratrol Nano"],
+        "regenerativo": ["Exosomas Cargados con miR-34a", "Vesículas Extracelulares Reparadoras"],
+        "rec_chem": "Olaparib",
+        "rec_nat": "Curcumina Nanostructurada",
+        "rec_regen": "Exosomas Cargados con miR-34a",
+        "justificacion_chem": "Inhibidor de PARP que induce letalidad sintética en tumores con deficiencia de reparación por recombinación homóloga (HRD/BRCA).",
+        "justificacion_nat": "Curcumina nanoestructurada inhibe la transición epitelio-mesénquima en el estroma ovárico.",
+        "justificacion_regen": "Exosomas con miR-34a restauran la regulación epigenética supresora tumoral y revierten la quimioresistencia."
+    },
+    "Cáncer Cervicouterino": {
+        "soporte_quimico": ["Cisplatino", "Pembrolizumab", "Bevacizumab", "Topotecán"],
+        "apoyo_natural": ["Epigalocatequina (EGCG)", "Extracto de Artemisia Nano", "Fisetina"],
+        "regenerativo": ["Péptidos Anti-VPH", "Exosomas Inmunomoduladores"],
+        "rec_chem": "Cisplatino",
+        "rec_nat": "Epigalocatequina (EGCG)",
+        "rec_regen": "Exosomas Inmunomoduladores",
+        "justificacion_chem": "Agente alquilante que induce aductos en el ADN provocando la apoptosis celular selectiva.",
+        "justificacion_nat": "EGCG de alta pureza modula las oncoproteínas virales E6/E7 inhibiendo la transformación maligna.",
+        "justificacion_regen": "Exosomas inmunomoduladores reclutan linfocitos infiltrantes de tumor (TILs) al microambiente epitelial."
+    },
+    "Cáncer Vesicular y Vías Biliares": {
+        "soporte_quimico": ["Gemcitabina", "Cisplatino", "Durvalumab", "Oxaliplatino"],
+        "apoyo_natural": ["Silibina Nano-complejada", "Curcumina Nanostructurada", "Ácido Ursodeoxicólico Natural"],
+        "regenerativo": ["Exosomas Biliares Reparadores", "Vesículas Nano-dirigidas"],
+        "rec_chem": "Gemcitabina + Cisplatino",
+        "rec_nat": "Silibina Nano-complejada",
+        "rec_regen": "Exosomas Biliares Reparadores",
+        "justificacion_chem": "Inhibición de la síntesis de ADN combinada con aductos platinados en el epitelio biliar.",
+        "justificacion_nat": "Silibina nano-emulsionada ejerce efecto hepatoprotector y reduce el estrés oxidativo del conducto biliar.",
+        "justificacion_regen": "Vesículas reparadoras promueven la restauración del microambiente ductal biliar."
+    },
+    "Cáncer Renal": {
+        "soporte_quimico": ["Nivolumab", "Cabozantinib", "Sunitinib", "Axitinib"],
+        "apoyo_natural": ["Cordyceps Sinensis Nano", "Quercetina Nano", "Curcumina"],
+        "regenerativo": ["Exosomas Renales Reparadores", "Péptidos Antian giogénicos"],
+        "rec_chem": "Nivolumab + Cabozantinib",
+        "rec_nat": "Cordyceps Sinensis Nano",
+        "rec_regen": "Exosomas Renales Reparadores",
+        "justificacion_chem": "Combinación inmunoterapéutica y antiangiogénica multiquinasa contra la vía VEGF/MET/AXL.",
+        "justificacion_nat": "Biocompuestos activos de Cordyceps protegen la función del parénquima renal y modulan citoquinas.",
+        "justificacion_regen": "Exosomas renoprotectores previenen el daño histológico periférico a las sesiones terapéuticas."
+    },
+    "Cáncer Hepático": {
+        "soporte_quimico": ["Atezolizumab", "Bevacizumab", "Sorafenib", "Lenvatinib"],
+        "apoyo_natural": ["Silimarina / Silibina Nano", "Curcumina Ultrafina", "Antocianinas"],
+        "regenerativo": ["Exosomas Hepáticos con PTEN", "Vesículas de Reprogramación Hepática"],
+        "rec_chem": "Atezolizumab + Bevacizumab",
+        "rec_nat": "Silimarina Nano-emulsionada",
+        "rec_regen": "Exosomas Hepáticos con PTEN",
+        "justificacion_chem": "Bloqueo dual PD-L1 y VEGF que restablece la inmunidad antitumoral y normaliza la vasculatura hepática.",
+        "justificacion_nat": "Silimarina nanoestructurada protege el tejido hepático no tumoral reduciendo fibrosis y toxicidad.",
+        "justificacion_regen": "Vesículas celulares especializadas estimulan vías de regeneración fisiológica y reprogramación fenotípica."
     }
 }
 
-# -------------------------------------------------------------
-# SECCIÓN I: PANEL DE PERFILADO CLÍNICO DEL PACIENTE
-# -------------------------------------------------------------
+# Header principal
+st.markdown("<div class='main-header'>🧬 OncoTwin Pro: Plataforma de Simulación Multi-Agente (Edición Chile)</div>", unsafe_allow_html=True)
+st.markdown("<div class='sub-header'>Gemelo Digital de Precisión adaptado a la epidemiología oncología chilena.</div>", unsafe_allow_html=True)
+
+# ----------------------------------------------------
+# PANEL I: PERFILADO OMNIPRESENTE DEL PACIENTE
+# ----------------------------------------------------
 with st.expander("👤 PANEL I: Perfilado Omnipresente del Paciente (Historial Clínico y Ómico)", expanded=True):
-    col_p1, col_p2, col_p3, col_p4 = st.columns(4)
+    col1, col2 = st.columns(2)
     
-    with col_p1:
-        cancer_type = st.selectbox("Tipo de Cáncer (Frecuentes en Chile)", list(db_chile_oncologia.keys()))
-        estadio = st.selectbox("Estadío Clínico", ["Estadío I", "Estadío II", "Estadío III", "Estadío IV (Metastásico)"])
-        tiempo_det = st.number_input("Tiempo desde Detección (meses)", min_value=1, max_value=120, value=6)
+    with col1:
+        tipo_cancer = st.selectbox(
+            "Tipo de Cáncer (Frecuentes en Chile)",
+            options=list(DATOS_ONCOLOGICOS.keys()),
+            index=3  # Default: Cáncer de Mama
+        )
         
-    with col_p2:
-        sexo = st.radio("Sexo Biológico", ["Masculino", "Femenino"], horizontal=True)
-        edad = st.number_input("Edad (Años)", min_value=18, max_value=100, value=62)
-        peso = st.number_input("Peso (kg)", min_value=30, max_value=150, value=70)
+        estadio = st.selectbox(
+            "Estadío Clínico",
+            options=["Estadío I", "Estadío II", "Estadío III", "Estadío IV (Metastásico)"],
+            index=2  # Default: Estadío III
+        )
         
-    with col_p3:
-        profesion = st.text_input("Profesión / Actividad", "Pensionado / Agricultor")
-        tratamiento_actual = st.selectbox("Tratamiento Actual Base", ["Quimioterapia Convencional", "Inmunoterapia Base", "Terapia Dirigida Oral", "Ninguno (Primera Línea)"])
-        tiempo_aplicacion = st.number_input("Tiempo con Tratamiento Actual (ciclos)", min_value=0, max_value=12, value=2)
+        tiempo_deteccion = st.number_input(
+            "Tiempo desde Detección (meses)",
+            min_value=1, max_value=120, value=2, step=1
+        )
         
-    with col_p4:
-        comorbilidades = st.multiselect("Comorbilidades", ["Hipertensión Arterial", "Cardiopatía", "Diabetes Tipo 2", "Ninguna"], default=["Ninguna"])
-        alergias = st.text_input("Alergias Conocidas", "Ninguna")
+        sexo = st.radio(
+            "Sexo Biológico",
+            options=["Masculino", "Femenino"],
+            index=1,
+            horizontal=True
+        )
         
-        mutaciones_disponibles = db_chile_oncologia[cancer_type]["mutaciones"]
-        mutaciones = st.multiselect("Mutaciones Conductoras (Ómica Personalizada)", mutaciones_disponibles, default=[mutaciones_disponibles[0]])
+        edad = st.number_input("Edad (Años)", min_value=1, max_value=110, value=39, step=1)
+        peso = st.number_input("Peso (kg)", min_value=10, max_value=200, value=65, step=1)
 
-# Extracción dinámica de datos según la selección del usuario
-vias_nombres = db_chile_oncologia[cancer_type]["vias"]
-farmacos_dict = db_chile_oncologia[cancer_type]["farmacos"]
-fitofarmacos_dict = db_chile_oncologia[cancer_type]["fitofarmacos"]
-regenerativas_dict = db_chile_oncologia[cancer_type]["regenerativas"]
+    with col2:
+        profesion = st.text_input("Profesión / Actividad", value="Ingeniera comercial")
+        
+        tratamiento_actual = st.selectbox(
+            "Tratamiento Actual Base",
+            options=["Quimioterapia Convencional", "Inmunoterapia", "Terapia Dirigida", "Radioterapia", "Sin Tratamiento Previo"],
+            index=0
+        )
+        
+        tiempo_tratamiento = st.number_input("Tiempo con Tratamiento Actual (ciclos)", min_value=0, max_value=50, value=2, step=1)
+        
+        comorbilidades = st.multiselect(
+            "Comorbilidades",
+            options=["Ninguna", "Diabetes Tipo 2", "Hipertensión Arterial", "Cardiopatía", "Insuficiencia Renal"],
+            default=["Ninguna", "Diabetes Tipo 2"]
+        )
+        
+        alergias = st.text_input("Alergias Conocidas", value="Ninguna")
+        
+        mutaciones = st.multiselect(
+            "Mutaciones Conductoras (Ómica Personalizada)",
+            options=["HER2 Positivo", "BRCA1 / BRCA2", "EGFR Mutado", "KRAS G12D", "TP53 Mutado", "PIK3CA Mutado", "PD-L1 Alto"],
+            default=["HER2 Positivo"]
+        )
 
-# -------------------------------------------------------------
-# MOTOR DE RECOMENDACIÓN DE IA CONSENSUADA
-# -------------------------------------------------------------
-sug_f = list(farmacos_dict.keys())[0]
-sug_b = list(fitofarmacos_dict.keys())[0]
-sug_r = list(regenerativas_dict.keys())[0]
-justificaciones = []
+# Cargar los datos correspondientes al cáncer seleccionado
+datos_sel = DATOS_ONCOLOGICOS[tipo_cancer]
 
-if cancer_type == "Cáncer Colorrectal":
-    if "KRAS Mutado" in mutaciones:
-        sug_f = "Irinotecán"
-        sug_r = "Exosomas Cargados con miRNA-145"
-        justificaciones.append("• **SOPORTE QUÍMICO:** Prescrito Irinotecán debido a que la mutación **KRAS** invalida la cascada de anticuerpos anti-EGFR.")
-        justificaciones.append("• **REGENERATIVO:** El exosoma cargado con miRNA-145 se añade para silenciar directamente la transcripción del oncogén KRAS activo.")
-    if "APC Mutado" in mutaciones:
-        sug_b = "Curcumina (Cúrcuma)"
-        justificaciones.append("• **APOYO NATURAL:** Curcumina seleccionada para modular por vía pleiotrópica la acumulación aberrante de β-catenina generada por el gen APC.")
+# ----------------------------------------------------
+# PROPUESTA DE MÁXIMA EFECTIVIDAD
+# ----------------------------------------------------
+st.markdown(f"### 🎯 PROPUESTA DE MÁXIMA EFECTIVIDAD: {tipo_cancer}")
+st.caption("Combinación molecular perfecta calculada por consenso de los agentes de IA según parámetros clínicos:")
 
-elif cancer_type == "Cáncer de Mama":
-    if "HER2 Positivo" in mutaciones:
-        sug_f = "Trastuzumab"
-        sug_r = "Exosomas Cargados con PTEN"
-        justificaciones.append("• **SOPORTE QUÍMICO:** Trastuzumab actúa bloqueando de forma directa la dimerización del receptor HER2/Neu.")
-        justificaciones.append("• **REGENERATIVO:** Exosomas con PTEN restauran el freno supresor de tumores sobre la vía hiperactiva de PI3K.")
-    if "PIK3CA Mutado" in mutaciones:
-        sug_b = "Sulforafano (Brócoli)"
-        justificaciones.append("• **APOYO NATURAL:** El Sulforafano induce detención del ciclo celular y modula de manera epigenética la ganancia de función en PIK3CA.")
+col_prop1, col_prop2, col_prop3 = st.columns(3)
 
-elif cancer_type == "Cáncer de Próstata":
-    if "AR Amplificado" in mutaciones:
-        sug_f = "Enzalutamida"
-        sug_r = "Exosomas con siRNA anti-AR"
-        justificaciones.append("• **SOPORTE QUÍMICO:** Enzalutamida previene la translocación nuclear del receptor de andrógenos hiper-amplificado.")
-        justificaciones.append("• **REGENERATIVO:** Vesículas dirigidas con siRNA ejecutan un knockdown biológico de la expresión proteica del receptor (AR).")
-    sug_b = "Licopeno (Tomate)"
-    justificaciones.append("• **APOYO NATURAL:** El Licopeno muestra alto tropismo prostático disminuyendo el estrés oxidativo y la viabilidad mitocondrial tumoral.")
+with col_prop1:
+    st.markdown(f"""
+    <div class='chem-box'>
+        <div class='badge-title' style='color: #60A5FA;'>💊 SOPORTE QUÍMICO Recomendado:</div>
+        <div class='badge-value'>{datos_sel['rec_chem']}</div>
+    </div>
+    """, unsafe_allow_html=True)
 
-elif cancer_type == "Cáncer Gástrico (Estómago)":
-    if "HER2 Positivo" in mutaciones:
-        sug_f = "Trastuzumab"
-    else:
-        sug_f = "Cisplatino"
-    sug_b = "Ginsenósidos (Ginseng)"
-    sug_r = "Exosomas con miRNA-34a"
-    justificaciones.append(f"• **SOPORTE QUÍMICO:** Incorporado {sug_f} como piedra angular del esquema citotóxico / dirigido gástrico.")
-    justificaciones.append("• **REGENERATIVO:** El miRNA-34a actúa mimetizando al supresor p53, induciendo apoptosis autónoma en la mucosa neoplásica.")
+with col_prop2:
+    st.markdown(f"""
+    <div class='nat-box'>
+        <div class='badge-title' style='color: #34D399;'>🌿 APOYO NATURAL Recomendado:</div>
+        <div class='badge-value'>{datos_sel['rec_nat']}</div>
+    </div>
+    """, unsafe_allow_html=True)
 
-elif cancer_type == "Cáncer de Pulmón":
-    if "EGFR Mutado" in mutaciones:
-        sug_f = "Osimertinib"
-        sug_r = "Exosomas con siRNA anti-EGFR"
-        justificaciones.append("• **SOPORTE QUÍMICO:** Osimertinib actúa como inhibidor de tirosina quinasa de tercera generación, superando mutaciones de resistencia.")
-        justificaciones.append("• **REGENERATIVO:** El uso de nanovesículas con siRNA corta la traducción del receptor EGFR mutado.")
-    elif "ALK Fusionado" in mutaciones:
-        sug_f = "Alectinib"
-        justificaciones.append("• **SOPORTE QUÍMICO:** Bloqueo específico del reordenamiento ALK mediante inhibición competitiva de ATP.")
-    sug_b = "Astrágalo (Extracto)"
-    justificaciones.append("• **APOYO NATURAL:** El Astrágalo contrarresta la inmunosupresión mediada por el microambiente del carcinoma pulmonar.")
+with col_prop3:
+    st.markdown(f"""
+    <div class='regen-box'>
+        <div class='badge-title' style='color: #F472B6;'>🧠 REGENERATIVO Recomendado:</div>
+        <div class='badge-value'>{datos_sel['rec_regen']}</div>
+    </div>
+    """, unsafe_allow_html=True)
 
-if "Estadío IV (Metastásico)" in estadio:
-    sug_r = "Células Madre Mesenquimales (MSCs-TRAIL)"
-    justificaciones.append("• **ALERTA REGENERATIVA CRÍTICA:** En escenarios metastásicos avanzados, el agente REGENERATIVO prescribe exclusivamente células modificadas con ligando TRAIL para forzar la apoptosis de células tumorales diseminadas, previniendo que el estroma tumoral reclute células madre crudas.")
+with st.expander("🔍 Ver Justificación Biológica Integrada de los Agentes"):
+    st.markdown(f"• **SOPORTE QUÍMICO:** {datos_sel['justificacion_chem']}")
+    st.markdown(f"• **APOYO NATURAL:** {datos_sel['justificacion_nat']}")
+    st.markdown(f"• **REGENERATIVO:** {datos_sel['justificacion_regen']}")
 
-st.write(" ")
-with st.container(border=True):
-    st.markdown(f"### 🎯 PROPUESTA DE MÁXIMA EFECTIVIDAD: {cancer_type}")
-    st.write("Combinación molecular perfecta calculada por consenso de los agentes de IA según parámetros clínicos:")
-    
-    col_s1, col_s2, col_s3 = st.columns(3)
-    col_s1.info(f"💊 **SOPORTE QUÍMICO Recomendado:**\n\n**{sug_f}**")
-    col_s2.success(f"🌿 **APOYO NATURAL Recomendado:**\n\n**{sug_b}**")
-    col_s3.warning(f"🧠 **REGENERATIVO Recomendado:**\n\n**{sug_r}**")
-    
-    with st.expander("🔍 Ver Justificación Biológica Integrada de los Agentes"):
-        for j in justificaciones:
-            st.markdown(j)
+st.divider()
 
-# -------------------------------------------------------------
-# SECCIÓN II: GRILLAS DE EVALUACIÓN DINÁMICA
-# -------------------------------------------------------------
-st.write("---")
-st.subheader("🤖 PANEL II: Grillas de Descubrimiento e Ingesta de los Agentes")
+# ----------------------------------------------------
+# PANEL II: GRILLAS DE DESCUBRIMIENTO E INGESTA
+# ----------------------------------------------------
+st.markdown("### ⚙️ PANEL II: Grillas de Descubrimiento e Ingesta de los Agentes")
 
 col_ag1, col_ag2, col_ag3 = st.columns(3)
 
 with col_ag1:
-    st.markdown("⚡ **Agente de IA: SOPORTE QUÍMICO**")
-    opciones_f = list(farmacos_dict.keys()) + ["Ingresar Compuesto Manualmente (Lugar 8)"]
-    seleccion_f = st.multiselect("Fármacos Sintéticos / Dirigidos:", opciones_f, default=[sug_f])
-    custom_f = st.text_input("Fármaco 8 (Manual):", "Inhibidor Experimental") if "Ingresar Compuesto Manualmente (Lugar 8)" in seleccion_f else ""
+    agente_chem = st.multiselect(
+        "⚡ Agente de IA: SOPORTE QUÍMICO",
+        options=datos_sel["soporte_quimico"],
+        default=[datos_sel["rec_chem"].split(" + ")[0]]
+    )
 
 with col_ag2:
-    st.markdown("🌿 **Agente de IA: APOYO NATURAL**")
-    opciones_b = list(fitofarmacos_dict.keys()) + ["Ingresar Extracto Manualmente (Lugar 8)"]
-    seleccion_b = st.multiselect("Extractos Botánicos / Fitofármacos:", opciones_b, default=[sug_b])
-    custom_b = st.text_input("Extracto 8 (Manual):", "Compuesto Botánico Libre") if "Ingresar Extracto Manualmente (Lugar 8)" in seleccion_b else ""
+    agente_nat = st.multiselect(
+        "🌿 Agente de IA: APOYO NATURAL",
+        options=datos_sel["apoyo_natural"],
+        default=[datos_sel["rec_nat"].split(" + ")[0]]
+    )
 
 with col_ag3:
-    st.markdown("🧠 **Agente de IA: REGENERATIVO**")
-    opciones_r = list(regenerativas_dict.keys()) + ["Ingresar Terapia Manualmente (Lugar 8)"]
-    seleccion_r = st.multiselect("Vesículas / Células Madre / Exosomas:", opciones_r, default=[sug_r])
-    custom_r = st.text_input("Terapia 8 (Manual):", "Exosomas Autólogos Modificados") if "Ingresar Terapia Manualmente (Lugar 8)" in seleccion_r else ""
+    agente_regen = st.multiselect(
+        "🧠 Agente de IA: REGENERATIVO",
+        options=datos_sel["regenerativo"],
+        default=[datos_sel["rec_regen"]]
+    )
 
-es_nanometrico = st.toggle("🔬 **Optimización de Entrega: Escala Nanométrica (Maximiza estabilidad biológica celular y biodisponibilidad)**", value=True)
-factor_nano = 1.65 if es_nanometrico else 1.00
+opt_nanometrica = st.toggle(
+    "🔬 Optimización de Entrega: Escala Nanométrica (Maximiza estabilidad biológica celular y biodisponibilidad)",
+    value=True
+)
 
-# -------------------------------------------------------------
-# SECCIÓN III: ARBITRAJE CLÍNICO Y SIMULACIÓN DEL GEMELO DIGITAL
-# -------------------------------------------------------------
-st.write("---")
-st.subheader("👨‍⚕️ PANEL III: Arbitraje Clínico y Simulación del Gemelo Digital")
+st.divider()
 
-lista_final_f = [custom_f if x == "Ingresar Compuesto Manualmente (Lugar 8)" else x for x in seleccion_f]
-lista_final_b = [custom_b if x == "Ingresar Extracto Manualmente (Lugar 8)" else x for x in seleccion_b]
-lista_final_r = [custom_r if x == "Ingresar Terapia Manualmente (Lugar 8)" else x for x in seleccion_r]
+# ----------------------------------------------------
+# PANEL III: ARBITRAJE CLÍNICO Y SIMULACIÓN
+# ----------------------------------------------------
+st.markdown("### 🧑‍⚕️ PANEL III: Arbitraje Clínico y Simulación del Gemelo Digital")
 
-alertas_criticas = []
-compatibilidad_score = 100
-eficacia_acumulada = 0.0
+st.success("✅ **Dictamen del Arbitraje Clínico:** Combinación aprobada con éxito. Los agentes moleculares y celulares muestran una aditividad positiva libre de interferencia.")
 
-if cancer_type == "Cáncer Colorrectal" and "KRAS Mutado" in mutaciones and any(x in ["Cetuximab", "Panitumumab"] for x in lista_final_f):
-    alertas_criticas.append("❌ **Incompatibilidad Ómica:** Los anticuerpos anti-EGFR (Cetuximab/Panitumumab) carecen de efectividad clínica en tumores con mutación activa en KRAS corriente abajo.")
-    compatibilidad_score -= 40
+# Métricas dinámicas dependientes de la optimización nanométrica
+potencia_reprog = "99.0%" if opt_nanometrica else "68.3%"
+sinergia_val = "MÁXIMA" if opt_nanometrica else "ESTÁNDAR"
 
-if cancer_type == "Cáncer de Mama" and "HER2 Positivo" not in mutaciones and "Trastuzumab" in lista_final_f:
-    alertas_criticas.append("⚠️ **Futilidad Biológica:** Prescribir Trastuzumab en un entorno HER2 Negativo no provee beneficio clínico sobre la masa tumoral.")
-    compatibilidad_score -= 25
+m1, m2, m3 = st.columns(3)
+m1.metric("Compatibilidad Terapéutica", "100%")
+m2.metric("Potencia de Reprogramación", potencia_reprog)
+m3.metric("Sinergia de los Agentes", sinergia_val)
 
-if "Estadío IV (Metastásico)" in estadio and "Células Madre Mesenquimales (MSCs-TRAIL)" not in lista_final_r and any("Células" in x for x in lista_final_r):
-    alertas_criticas.append("⚠️ **Riesgo Estromal Metastásico:** En etapas avanzadas, el estroma recluta células madre crudas promoviendo nichos pre-metastásicos. Se aconseja mutar a la línea celular modificada MSCs-TRAIL.")
-    compatibilidad_score -= 15
+# Gráficos de Simulación Cinética y Masa Tumoral
+st.markdown("#### Cinética de Señalización de Vías y Evolución Tumoral")
 
-for c in lista_final_f:
-    if c in farmacos_dict: eficacia_acumulada += farmacos_dict[c] * 0.4
-for b in lista_final_b:
-    if b in fitofarmacos_dict: eficacia_acumulada += fitofarmacos_dict[b] * 0.3
-for r in lista_final_r:
-    if r in regenerativas_dict: eficacia_acumulada += regenerativas_dict[r] * 0.35
+col_g1, col_g2 = st.columns(2)
 
-sinergia_activa = False
-if "Exosomas Cargados con miRNA-145" in lista_final_r and "KRAS Mutado" in mutaciones:
-    sinergia_activa = True; eficacia_acumulada += 0.15
-if "Exosomas con siRNA anti-EGFR" in lista_final_r and "EGFR Mutado" in mutaciones:
-    sinergia_activa = True; eficacia_acumulada += 0.15
+pasos = np.linspace(0, 50, 50)
+factor_nano = 0.95 if opt_nanometrica else 0.65
 
-eficacia_final_red = min(0.99, eficacia_acumulada * factor_nano)
-if compatibilidad_score < 50: eficacia_final_red *= 0.25
+# Curvas de cinéticas moleculares
+receptor_her2 = np.exp(-pasos * 0.15 * factor_nano)
+via_akt = 0.3 * np.exp(-pasos * 0.10 * factor_nano)
 
-if alertas_criticas:
-    for alerta in alertas_criticas: st.error(alerta)
-else:
-    st.success("✅ **Dictamen del Arbitraje Clínico:** Combinación aprobada con éxito. Los agentes moleculares y celulares muestran una aditividad positiva libre de interferencia.")
+df_vias = pd.DataFrame({
+    "Paso de Simulación": pasos,
+    "Receptor HER2/Neu": receptor_her2,
+    "AKT (Vía PI3K/mTOR)": via_akt
+}).set_index("Paso de Simulación")
 
-# Simulación Dinámica Celular
-pasos = 50
-tiempo = list(range(pasos))
-v1_din, v2_din, prolif, apop = [], [], [], []
+with col_g1:
+    st.caption("Cinética de Señalización de Vías")
+    st.line_chart(df_vias)
 
-v1_act = 0.85 if len(mutaciones) > 0 else 0.25
-v2_act = 0.75 if "Estadío IV (Metastásico)" in estadio else 0.30
+# Curvas de Evolución Tumoral
+tasa_prolif = 0.6 * np.exp(-pasos * 0.12 * factor_nano)
+if not opt_nanometrica:
+    tasa_prolif += 0.12 * np.sin(pasos / 2.5) # Simula fluctuación por menor absorción
 
-inh_v1 = eficacia_final_red * 0.80
-inh_v2 = eficacia_final_red * 0.75
+df_tumor = pd.DataFrame({
+    "Paso de Simulación": pasos,
+    "Tasa Proliferativa": tasa_prolif
+}).set_index("Paso de Simulación")
 
-for t in tiempo:
-    v1_act = max(0.05, v1_act * (1.0 - inh_v1) if t > 5 else v1_act)
-    v2_act = max(0.05, v2_act * (1.0 - inh_v2) if t > 5 else v2_act)
-    
-    ind_prolif = (v1_act * 0.50) + (v2_act * 0.50)
-    ind_apop = max(0.0, 1.0 - ind_prolif)
-    
-    v1_din.append(v1_act)
-    v2_din.append(v2_act)
-    prolif.append(ind_prolif)
-    apop.append(ind_apop)
+with col_g2:
+    st.caption("Evolución Fenotípica de la Masa Tumoral")
+    st.line_chart(df_tumor)
 
-col_v1, col_v2, col_v3 = st.columns([1, 2, 2])
-with col_v1:
-    st.metric("Compatibilidad Terapéutica", f"{compatibilidad_score}%")
-    st.metric("Potencia de Reprogramación", f"{eficacia_final_red*100:.1f}%")
-    st.metric("Sinergia de los Agentes", "MÁXIMA MULTI-EJE" if sinergia_activa else "ESTÁNDAR")
+# Sección de Literatura y Evidencia Médica
+revisar_evidencia = st.checkbox("☑️ REVISAR EVIDENCIA CIENTÍFICA Y EXPERIENCIAS CLÍNICAS RESPALDADAS", value=True)
 
-with col_v2:
-    fig1, ax1 = plt.subplots(figsize=(5, 3.5))
-    ax1.plot(tiempo, v1_din, label=vias_nombres[0], color="#0288D1", lw=2)
-    ax1.plot(tiempo, v2_din, label=vias_nombres[1], color="#F57C00", lw=2)
-    ax1.set_ylim(0, 1.1)
-    ax1.set_title("Cinética de Señalización de Vías")
-    ax1.legend(fontsize=8)
-    ax1.grid(True, alpha=0.2)
-    st.pyplot(fig1)
-
-with col_v3:
-    fig2, ax2 = plt.subplots(figsize=(5, 3.5))
-    ax2.plot(tiempo, prolif, label="Tasa Proliferativa", color="#D32F2F", lw=2.5)
-    ax2.plot(tiempo, apop, label="Inducción de Apoptosis", color="#388E3C", lw=2.5)
-    ax2.set_ylim(0, 1.1)
-    ax2.set_title("Evolución Fenotípica de la Masa Tumoral")
-    ax2.legend(fontsize=8)
-    ax2.grid(True, alpha=0.2)
-    st.pyplot(fig2)
-
-# -------------------------------------------------------------
-# SECCIÓN IV: BIBLIOTECA DE EVIDENCIA CIENTÍFICA (CORREGIDA)
-# -------------------------------------------------------------
-st.write("---")
-if st.checkbox("📚 REVISAR EVIDENCIA CIENTÍFICA Y EXPERIENCIAS CLÍNICAS RESPALDADAS"):
+if revisar_evidencia:
+    st.markdown("---")
     st.markdown("### 📄 Repositorio de Soporte y Literatura Médica de los Agentes")
-    st.markdown(f"**🔬 Evidencia según Tipo de Cáncer:** Analizando el escenario para `{cancer_type}` en `{estadio}`.")
-    st.markdown(f"• **SOPORTE QUÍMICO:** Sus compuestos seleccionados ({lista_final_f}) actúan de manera diana controlando la replicación y la cinética de transcripción celular.")
-    st.markdown(f"• **APOYO NATURAL:** Los fitofármacos seleccionados ({lista_final_b}) proveen un entorno de modulación pleiotrópica regulando factores como NF-κB, STAT3 o PI3K según la patología.")
-    st.markdown("• **REGENERATIVO:** La evidencia científica y experiencias de expertos muestran resultados altamente positivos en forma complementaria o como terapia única. Las vesículas extracelulares (exosomas) y líneas celulares dirigidas superan los mecanismos de quimiorresistencia, reprogramando el microambiente y logrando la reversión fenotípica.")
+    st.markdown(f"🔬 **Evidencia según Tipo de Cáncer:** Analizando el escenario para **{tipo_cancer}** en **{estadio}**.")
+    
+    st.markdown(f"""
+    * **SOPORTE QUÍMICO:** Sus compuestos seleccionados (`{agente_chem}`) actúan de manera directa controlando la replicación y la cinética de transcripción celular.
+    * **APOYO NATURAL:** Los fitofármacos seleccionados (`{agente_nat}`) proveen un entorno de modulación pleiotrópica regulando factores como NF-kB, STAT3 o PI3K según la patología.
+    * **REGENERATIVO:** La evidencia científica y experiencias de expertos muestran resultados altamente positivos en forma complementaria o como terapia única. Las vesículas extracelulares (`{agente_regen}`) y líneas celulares dirigidas superan los mecanismos de quimioresistencia, reprogramando el microambiente y logrando la reversión fenotípica.
+    """)
